@@ -39,14 +39,14 @@
         .label-small { font-size: 10px; font-weight: 900; color: var(--ultra-orange); text-transform: uppercase; letter-spacing: 3px; }
         .data-large { font-size: 52px; font-weight: 200; line-height: 1; margin-top: 4px; letter-spacing: -2px; }
 
-        /* --- TERMINAL (TALLER VERSION) --- */
+        /* --- TERMINAL --- */
         #terminal-wrap { 
             position: absolute; 
-            top: 130px; /* Sits right below the header elements */
+            top: 130px; 
             left: 50%; 
             transform: translateX(-50%); 
             width: 900px; 
-            height: 75vh; /* Increased height */
+            height: 75vh; 
             display: flex; 
             flex-direction: column; 
             z-index: 50; 
@@ -65,7 +65,7 @@
         .term-line { margin-bottom: 2px; padding: 4px 0; display: flex; align-items: flex-start; gap: 8px; animation: fadeIn 0.3s ease-out forwards; transition: background 0.2s; }
         .term-line:hover { background: rgba(255, 94, 0, 0.05); }
         .term-ts { color: #444; font-size: 12px; white-space: nowrap; }
-        .intel-string { color: var(--ultra-orange); opacity: 0.7; font-weight: 600; font-size: 11px; text-transform: uppercase; white-space: nowrap; }
+        .intel-string { color: var(--ultra-orange); opacity: 0.8; font-weight: 700; font-size: 11px; text-transform: uppercase; white-space: nowrap; letter-spacing: 1px; }
         .source-tag { color: #aaa; font-weight: 700; background: #222; padding: 0 6px; border-radius: 3px; font-size: 10px; }
         .term-link { color: #d1d1d1; text-decoration: none; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .term-link:hover { color: #fff; }
@@ -223,9 +223,12 @@
             line.className = 'term-line';
             line.onmouseenter = () => isIntelHovered = true;
             line.onmouseleave = () => isIntelHovered = false;
-            line.innerHTML = `<span class="term-ts">[${new Date().toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'})}]</span> <span class="intel-string">INTEL:</span> <span class="source-tag">${item.src}</span> <a href="${item.url}" target="_blank" class="term-link">${item.txt}</a>`;
+            
+            // Updated to "LIVE_INTEL:"
+            line.innerHTML = `<span class="term-ts">[${new Date().toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'})}]</span> <span class="intel-string">LIVE_INTEL:</span> <span class="source-tag">${item.src}</span> <a href="${item.url}" target="_blank" class="term-link">${item.txt}</a>`;
             logContainer.prepend(line);
-            if (logContainer.childNodes.length > 50) logContainer.lastChild.remove(); // Increased visibility
+            
+            if (logContainer.childNodes.length > 50) logContainer.lastChild.remove();
         }
         setTimeout(processQueue, Math.random() * 1000 + 800);
     }
