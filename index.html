@@ -49,7 +49,7 @@
         #cli-box { padding: 20px; margin-top: 10px; border-top: 1px solid var(--hud-tick); display: flex; align-items: center; gap: 15px; }
         #term-input { background: transparent; border: none; color: white; font-family: 'Fira Code'; font-size: 18px; width: 100%; outline: none; opacity: 0.6; }
 
-        /* --- APPLE MODAL --- */
+        /* --- APPLE HELP MODAL --- */
         #help-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 1000; align-items: center; justify-content: center; }
         .modal-content { background: var(--claude-gray); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 28px; width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
         .cmd-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-family: 'Fira Code'; font-size: 13px; border-bottom: 1px solid rgba(255,94,0,0.1); padding-bottom: 8px; }
@@ -130,13 +130,15 @@
             const cmd = input.value.trim();
             const cmdLower = cmd.toLowerCase();
 
-            if (cmd === '/help') {
+            if (cmdLower === '/help') {
                 document.getElementById('help-modal').style.display = 'flex';
             } 
-            else if (cmd.startsWith('/hn ')) {
+            else if (cmdLower.startsWith('/hn ')) {
                 const sub = cmd.split(' ')[1].toLowerCase();
+                // When user requests a specific feed, purge the old queue to show new data immediately
+                intelQueue = []; 
                 fetchHN(sub);
-                input.placeholder = `SYNCED: HN_${sub.toUpperCase()}`;
+                input.placeholder = `FEED_SYNCED: HN_${sub.toUpperCase()}`;
             }
             else if (cmd.startsWith('/')) {
                 const query = cmd.substring(1);
@@ -157,21 +159,33 @@
     });
 
     async function fetchHN(type = 'top') {
-        const res = await fetch(`https://hacker-news.firebaseio.com/v0/${type}stories.json`);
-        const ids = await res.json();
-        ids.slice(0, 50).forEach(async (id) => {
-            const item = await (await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)).json();
-            if (item && item.title) pushToQueue({ src: `HN_${type.toUpperCase()}`, txt: item.title, url: item.url || `https://news.ycombinator.com/item?id=${id}` });
-        });
+        try {
+            const res = await fetch(`https://hacker-news.firebaseio.com/v0/${type}stories.json`);
+            const ids = await res.json();
+            // Fetching 50 items for the selected category
+            ids.slice(0, 50).forEach(async (id) => {
+                const item = await (await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)).json();
+                if (item && item.title) {
+                    const payload = { 
+                        src: `HN_${type.toUpperCase()}`, 
+                        txt: item.title, 
+                        url: item.url || `https://news.ycombinator.com/item?id=${id}` 
+                    };
+                    intelQueue.push(payload);
+                    intelArchive.push(payload);
+                    if (intelArchive.length > 500) intelArchive.shift();
+                }
+            });
+        } catch(e) { console.warn("HN Fetch Error"); }
     }
 
     async function fetchIntel() {
+        // Initial mixed feed
         fetchHN('top');
-        // GitHub Trending Proxy
         const ghRes = await fetch('https://gtrend.yapie.me/repositories?since=daily');
         const ghData = await ghRes.json();
         ghData.slice(0, 15).forEach(repo => pushToQueue({ src: 'GITHUB', txt: `${repo.author}/${repo.name}`, url: repo.url }));
-        // Dev.to
+        
         const devRes = await fetch('https://dev.to/api/articles?top=1&per_page=15');
         const devData = await devRes.json();
         devData.forEach(p => pushToQueue({ src: 'DEV_TO', txt: p.title, url: p.url }));
@@ -180,21 +194,35 @@
     function pushToQueue(item) {
         intelQueue.push(item);
         intelArchive.push(item);
-        if (intelArchive.length > 300) intelArchive.shift();
+        if (intelArchive.length > 500) intelArchive.shift();
     }
 
     function processQueue() {
         if (isIntelHovered) { setTimeout(processQueue, 1000); return; }
-        if (intelQueue.length === 0 && intelArchive.length > 0) intelQueue = [...intelArchive].sort(() => Math.random() - 0.5);
+        
+        // Loop archive if queue is empty
+        if (intelQueue.length === 0 && intelArchive.length > 0) {
+            intelQueue = [...intelArchive].sort(() => Math.random() - 0.5);
+        }
+
         if (intelQueue.length > 0) {
             let item = intelQueue.shift();
-            if (activeFilter === 'HN' && !item.src.includes('HN')) { setTimeout(processQueue, 10); return; }
+            
+            // Handle filtering logic
+            if (activeFilter === 'HN' && !item.src.includes('HN')) { 
+                setTimeout(processQueue, 10); 
+                return; 
+            }
+
             const line = document.createElement('div');
             line.className = 'term-line';
             line.onmouseenter = () => isIntelHovered = true;
             line.onmouseleave = () => isIntelHovered = false;
-            line.innerHTML = `<span class="term-ts">[${new Date().toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'})}]</span> <span class="intel-string">INTEL:</span> <span class="source-tag">${item.src}</span> <a href="${item.url}" target="_blank" class="term-link">${item.txt}</a>`;
+            
+            const ts = new Date().toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'});
+            line.innerHTML = `<span class="term-ts">[${ts}]</span> <span class="intel-string">INTEL:</span> <span class="source-tag">${item.src}</span> <a href="${item.url}" target="_blank" class="term-link">${item.txt}</a>`;
             logContainer.prepend(line);
+            
             if (logContainer.childNodes.length > 40) logContainer.lastChild.remove();
         }
         setTimeout(processQueue, Math.random() * 1000 + 800);
@@ -206,6 +234,7 @@
         const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,weathercode&timezone=auto${unit}`);
         const data = await res.json();
         document.getElementById('temp-label').innerText = `${Math.round(data.current_weather.temperature)}°${useMetric ? 'C' : 'F'}`;
+        
         const aRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);
         const aData = await aRes.json();
         document.getElementById('alt-val').innerText = `${Math.round(aData.elevation[0] * 3.28084).toLocaleString()} FT`;
@@ -235,9 +264,11 @@
     window.onload = async () => {
         if (savedLoc) updateWeatherUI(savedLoc.lat, savedLoc.lon, savedLoc.name);
         else {
-            const res = await fetch('https://ipapi.co/json/');
-            const data = await res.json();
-            updateWeatherUI(data.latitude, data.longitude, data.city);
+            try {
+                const res = await fetch('https://ipapi.co/json/');
+                const data = await res.json();
+                updateWeatherUI(data.latitude, data.longitude, data.city);
+            } catch(e) { console.warn("Geo fail"); }
         }
         fetchIntel();
         processQueue();
