@@ -39,7 +39,7 @@
         .label-small { font-size: 10px; font-weight: 900; color: var(--ultra-orange); text-transform: uppercase; letter-spacing: 3px; }
         .data-large { font-size: 52px; font-weight: 200; line-height: 1; margin-top: 4px; letter-spacing: -2px; }
 
-        /* --- TERMINAL --- */
+        /* --- TERMINAL (TALLER & REVERSED) --- */
         #terminal-wrap { 
             position: absolute; 
             top: 130px; 
@@ -59,7 +59,7 @@
             line-height: 1.8; 
             overflow: hidden; 
             display: flex; 
-            flex-direction: column-reverse; 
+            flex-direction: column-reverse; /* NEWEST AT TOP */
             mask-image: linear-gradient(to top, black 90%, transparent 100%); 
         }
         .term-line { margin-bottom: 2px; padding: 4px 0; display: flex; align-items: flex-start; gap: 8px; animation: fadeIn 0.3s ease-out forwards; transition: background 0.2s; }
@@ -73,12 +73,6 @@
         #cli-box { padding: 20px; margin-top: 10px; border-top: 1px solid var(--hud-tick); display: flex; align-items: center; gap: 15px; }
         #term-input { background: transparent; border: none; color: white; font-family: 'Fira Code'; font-size: 18px; width: 100%; outline: none; opacity: 0.6; }
 
-        /* --- APPLE HELP MODAL --- */
-        #help-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 1000; align-items: center; justify-content: center; }
-        .modal-content { background: var(--claude-gray); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 28px; width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
-        .cmd-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-family: 'Fira Code'; font-size: 13px; border-bottom: 1px solid rgba(255,94,0,0.1); padding-bottom: 8px; }
-        .cmd-name { color: var(--ultra-orange); font-weight: 600; }
-        
         .uplink { position: fixed; left: 40px; bottom: 40px; font-family: 'Fira Code'; color: var(--ultra-orange); }
         .altimeter { position: fixed; right: 40px; bottom: 40px; text-align: right; font-family: 'Fira Code'; color: var(--ultra-orange); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
@@ -107,19 +101,6 @@
     </div>
 </div>
 
-<div id="help-modal">
-    <div class="modal-content">
-        <h2 style="color:var(--ultra-orange); letter-spacing:3px; margin-bottom:25px; font-weight:900; font-size:14px;">SYSTEM_UTILITIES</h2>
-        <div class="cmd-row"><span class="cmd-name">/[CITY]</span><span>Update coordinates</span></div>
-        <div class="cmd-row"><span class="cmd-name">/HN [TOP|BEST|NEW]</span><span>Switch HN feed</span></div>
-        <div class="cmd-row"><span class="cmd-name">/HELP</span><span>Display archive</span></div>
-        <div class="cmd-row"><span class="cmd-name">HN</span><span>Filter for HN only</span></div>
-        <div class="cmd-row"><span class="cmd-name">ALL</span><span>Clear all filters</span></div>
-        <div class="cmd-row"><span class="cmd-name">CLICK_TEMP</span><span>Toggle & Save °F / °C</span></div>
-        <button onclick="document.getElementById('help-modal').style.display='none'" style="margin-top:20px; background:var(--ultra-orange); border:none; color:#000; padding:12px; border-radius:12px; font-weight:900; cursor:pointer; width:100%; font-size:11px; letter-spacing:1px;">ACKNOWLEDGE</button>
-    </div>
-</div>
-
 <div class="uplink">
     <p style="font-size: 9px; font-weight: 900; letter-spacing: 1px; opacity: 0.7;">LINK_HEALTH</p>
     <div style="font-size: 11px; margin-top: 4px;"><span id="ping-val">--MS</span> | <span id="uptime-val">00:00:00</span></div>
@@ -131,8 +112,29 @@
 </div>
 
 <script>
+    // --- COOKIE HELPERS ---
+    function setCookie(name, value, days) {
+        const d = new Date();
+        d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+        let expires = "expires="+d.toUTCString();
+        document.cookie = name + "=" + value + ";" + expires + ";path=/";
+    }
+
+    function getCookie(name) {
+        let nameEQ = name + "=";
+        let ca = document.cookie.split(';');
+        for(let i=0;i < ca.length;i++) {
+            let c = ca[i];
+            while (c.charAt(0)==' ') c = c.substring(1,c.length);
+            if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+        }
+        return null;
+    }
+
     let savedLoc = JSON.parse(localStorage.getItem('apple_tactical_vFinal_loc')) || null;
-    let useMetric = localStorage.getItem('apple_tactical_metric') === 'true';
+    
+    // Load preference from Cookies instead of LocalStorage
+    let useMetric = getCookie('apple_tactical_metric') === 'true';
 
     let intelQueue = [];
     let intelArchive = [];
@@ -142,7 +144,7 @@
 
     document.getElementById('temp-label').onclick = () => {
         useMetric = !useMetric;
-        localStorage.setItem('apple_tactical_metric', useMetric);
+        setCookie('apple_tactical_metric', useMetric, 365); // Save to Cookie for 1 year
         if (savedLoc) updateWeatherUI(savedLoc.lat, savedLoc.lon, savedLoc.name);
     };
 
@@ -154,14 +156,10 @@
             const cmd = input.value.trim();
             const cmdLower = cmd.toLowerCase();
 
-            if (cmdLower === '/help') {
-                document.getElementById('help-modal').style.display = 'flex';
-            } 
-            else if (cmdLower.startsWith('/hn ')) {
+            if (cmdLower.startsWith('/hn ')) {
                 const sub = cmd.split(' ')[1].toLowerCase();
                 intelQueue = []; 
                 fetchHN(sub);
-                input.placeholder = `FEED_SYNCED: HN_${sub.toUpperCase()}`;
             }
             else if (cmd.startsWith('/')) {
                 const query = cmd.substring(1);
@@ -174,9 +172,6 @@
                     updateWeatherUI(loc.latitude, loc.longitude, loc.name);
                 }
             } 
-            else if (cmdLower === 'hn') activeFilter = 'HN';
-            else if (cmdLower === 'all') { activeFilter = null; logContainer.innerHTML = ''; }
-
             input.value = '';
         }
     });
@@ -210,7 +205,6 @@
     function pushToQueue(item) {
         intelQueue.push(item);
         intelArchive.push(item);
-        if (intelArchive.length > 500) intelArchive.shift();
     }
 
     function processQueue() {
@@ -218,16 +212,12 @@
         if (intelQueue.length === 0 && intelArchive.length > 0) intelQueue = [...intelArchive].sort(() => Math.random() - 0.5);
         if (intelQueue.length > 0) {
             let item = intelQueue.shift();
-            if (activeFilter === 'HN' && !item.src.includes('HN')) { setTimeout(processQueue, 10); return; }
             const line = document.createElement('div');
             line.className = 'term-line';
             line.onmouseenter = () => isIntelHovered = true;
             line.onmouseleave = () => isIntelHovered = false;
-            
-            // Updated to "LIVE_INTEL:"
             line.innerHTML = `<span class="term-ts">[${new Date().toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'})}]</span> <span class="intel-string">LIVE_INTEL:</span> <span class="source-tag">${item.src}</span> <a href="${item.url}" target="_blank" class="term-link">${item.txt}</a>`;
             logContainer.prepend(line);
-            
             if (logContainer.childNodes.length > 50) logContainer.lastChild.remove();
         }
         setTimeout(processQueue, Math.random() * 1000 + 800);
