@@ -9,7 +9,7 @@
         :root {
             --ultra-orange: #FF5E00;
             --bg: #000000;
-            --claude-gray: #1a1a1a;
+            --claude-gray: rgba(26, 26, 26, 0.8);
             --hud-tick: rgba(255, 94, 0, 0.15);
         }
 
@@ -17,7 +17,7 @@
         body { background: var(--bg); color: #fff; font-family: "SF Pro Display", -apple-system, sans-serif; height: 100vh; overflow: hidden; user-select: none; }
         .topo-bg { position: fixed; inset: 0; background-image: url('https://www.transparenttextures.com/patterns/asfalt-dark.png'); opacity: 0.12; pointer-events: none; z-index: -1; }
 
-        /* --- HUD ELEMENTS --- */
+        /* --- HUD --- */
         .hud-tape { position: absolute; top: 0; left: 0; width: 100%; height: 100px; display: flex; justify-content: center; z-index: 10; pointer-events: none; }
         .tape-container { display: flex; align-items: flex-start; }
         .tape-day { width: 110px; display: flex; flex-direction: column; align-items: center; padding-top: 15px; }
@@ -29,55 +29,45 @@
         header { position: absolute; top: 40px; left: 40px; right: 40px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 100; }
         .corner-left { border-left: 3px solid var(--ultra-orange); padding-left: 20px; }
         .location { font-size: 12px; font-weight: 900; color: var(--ultra-orange); letter-spacing: 3px; text-transform: uppercase; }
-        .temp-large { font-size: 68px; font-weight: 200; line-height: 1; letter-spacing: -2px; }
+        #temp-label { font-size: 68px; font-weight: 200; line-height: 1; letter-spacing: -2px; cursor: pointer; transition: opacity 0.2s; }
+        #temp-label:hover { opacity: 0.7; }
         .corner-right { text-align: right; border-right: 3px solid var(--ultra-orange); padding-right: 20px; }
         .label-small { font-size: 10px; font-weight: 900; color: var(--ultra-orange); text-transform: uppercase; letter-spacing: 3px; }
         .data-large { font-size: 52px; font-weight: 200; line-height: 1; margin-top: 4px; letter-spacing: -2px; }
 
         /* --- TERMINAL --- */
-        #terminal-wrap {
-            position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%);
-            width: 900px; height: 70vh; 
-            display: flex; flex-direction: column; z-index: 50;
-        }
-        #terminal-log {
-            flex-grow: 1; padding: 10px 20px; font-family: 'Fira Code', monospace; font-size: 14px; 
-            line-height: 1.8; overflow: hidden; display: flex; flex-direction: column-reverse;
-            mask-image: linear-gradient(to top, black 80%, transparent 100%);
-        }
-        .term-line { 
-            margin-bottom: 2px; padding: 4px 0;
-            display: flex; align-items: flex-start; gap: 8px;
-            animation: fadeIn 0.3s ease-out forwards;
-            transition: background 0.2s;
-        }
+        #terminal-wrap { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 900px; height: 70vh; display: flex; flex-direction: column; z-index: 50; }
+        #terminal-log { flex-grow: 1; padding: 10px 20px; font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.8; overflow: hidden; display: flex; flex-direction: column-reverse; mask-image: linear-gradient(to top, black 80%, transparent 100%); }
+        .term-line { margin-bottom: 2px; padding: 4px 0; display: flex; align-items: flex-start; gap: 8px; animation: fadeIn 0.3s ease-out forwards; transition: background 0.2s; }
         .term-line:hover { background: rgba(255, 94, 0, 0.05); }
         .term-ts { color: #444; font-size: 12px; white-space: nowrap; }
         .intel-string { color: var(--ultra-orange); opacity: 0.7; font-weight: 600; font-size: 11px; text-transform: uppercase; white-space: nowrap; }
-        .source-tag { color: #aaa; font-weight: 700; background: var(--claude-gray); padding: 0 6px; border-radius: 3px; font-size: 10px; }
-        .term-link { color: #d1d1d1; text-decoration: none; transition: color 0.2s; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .source-tag { color: #aaa; font-weight: 700; background: #222; padding: 0 6px; border-radius: 3px; font-size: 10px; }
+        .term-link { color: #d1d1d1; text-decoration: none; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .term-link:hover { color: #fff; }
 
         #cli-box { padding: 20px; margin-top: 10px; border-top: 1px solid var(--hud-tick); display: flex; align-items: center; gap: 15px; }
-        #term-prompt { color: var(--ultra-orange); font-family: 'Fira Code'; font-weight: 900; opacity: 0.8; transition: opacity 0.3s; }
-        #term-input { background: transparent; border: none; color: white; font-family: 'Fira Code'; font-size: 18px; width: 100%; outline: none; opacity: 0.4; }
-        #term-input:focus { opacity: 1; }
+        #term-input { background: transparent; border: none; color: white; font-family: 'Fira Code'; font-size: 18px; width: 100%; outline: none; opacity: 0.6; }
 
+        /* --- APPLE MODAL --- */
+        #help-modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(25px); -webkit-backdrop-filter: blur(25px); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: var(--claude-gray); border: 1px solid rgba(255,255,255,0.1); padding: 40px; border-radius: 28px; width: 480px; box-shadow: 0 20px 60px rgba(0,0,0,0.6); }
+        .cmd-row { display: flex; justify-content: space-between; margin-bottom: 15px; font-family: 'Fira Code'; font-size: 13px; border-bottom: 1px solid rgba(255,94,0,0.1); padding-bottom: 8px; }
+        .cmd-name { color: var(--ultra-orange); font-weight: 600; }
+        
         .uplink { position: fixed; left: 40px; bottom: 40px; font-family: 'Fira Code'; color: var(--ultra-orange); }
         .altimeter { position: fixed; right: 40px; bottom: 40px; text-align: right; font-family: 'Fira Code'; color: var(--ultra-orange); }
-        .alt-value { font-size: 24px; font-weight: 700; }
-
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body id="surface">
+<body>
 <div class="topo-bg"></div>
 <div class="hud-tape"><div class="tape-container" id="forecast-tape"></div></div>
 
 <header>
     <div class="corner-left">
-        <p class="location" id="location-label">INTEL_SURFACE</p>
-        <p class="temp-large" id="temp-label">--°</p>
+        <p class="location" id="location-label">SURFACE_INTEL</p>
+        <p id="temp-label">--°</p>
     </div>
     <div class="corner-right">
         <p class="label-small" id="date-label">-- --</p>
@@ -88,8 +78,21 @@
 <div id="terminal-wrap">
     <div id="terminal-log"></div>
     <div id="cli-box">
-        <span id="term-prompt">λ</span>
-        <input type="text" id="term-input" placeholder="Type /[city] or 'hn' filter..." autocomplete="off">
+        <span style="color:var(--ultra-orange); font-weight:900;">λ</span>
+        <input type="text" id="term-input" placeholder="Type /help for commands..." autocomplete="off">
+    </div>
+</div>
+
+<div id="help-modal">
+    <div class="modal-content">
+        <h2 style="color:var(--ultra-orange); letter-spacing:3px; margin-bottom:25px; font-weight:900; font-size:14px;">SYSTEM_UTILITIES</h2>
+        <div class="cmd-row"><span class="cmd-name">/[CITY]</span><span>Update global coordinates</span></div>
+        <div class="cmd-row"><span class="cmd-name">/HN [TOP|BEST|NEW]</span><span>Switch Hacker News feeds</span></div>
+        <div class="cmd-row"><span class="cmd-name">/HELP</span><span>Display this archive</span></div>
+        <div class="cmd-row"><span class="cmd-name">HN</span><span>Filter terminal for HN only</span></div>
+        <div class="cmd-row"><span class="cmd-name">ALL</span><span>Clear all filters</span></div>
+        <div class="cmd-row"><span class="cmd-name">CLICK_TEMP</span><span>Toggle between °F / °C</span></div>
+        <button onclick="document.getElementById('help-modal').style.display='none'" style="margin-top:20px; background:var(--ultra-orange); border:none; color:#000; padding:12px; border-radius:12px; font-weight:900; cursor:pointer; width:100%; font-size:11px; letter-spacing:1px;">ACKNOWLEDGE</button>
     </div>
 </div>
 
@@ -100,20 +103,26 @@
 
 <div class="altimeter">
     <p style="font-size: 9px; font-weight: 900; letter-spacing: 1px; opacity: 0.7;">ELEVATION</p>
-    <p id="alt-val" class="alt-value">0000 FT</p>
+    <p id="alt-val" style="font-size:24px; font-weight:700;">0000 FT</p>
 </div>
 
 <script>
     let savedLoc = JSON.parse(localStorage.getItem('apple_tactical_vFinal_loc')) || null;
+    let useMetric = false;
     let intelQueue = [];
     let intelArchive = [];
     let startTime = Date.now();
     let isIntelHovered = false;
     let activeFilter = null;
 
-    // --- CLI COMMAND HANDLER ---
+    // --- UNIT TOGGLE ---
+    document.getElementById('temp-label').onclick = () => {
+        useMetric = !useMetric;
+        if (savedLoc) updateWeatherUI(savedLoc.lat, savedLoc.lon, savedLoc.name);
+    };
+
+    // --- CLI HANDLER ---
     const input = document.getElementById('term-input');
-    const prompt = document.getElementById('term-prompt');
     const logContainer = document.getElementById('terminal-log');
 
     input.addEventListener('keydown', async (e) => {
@@ -121,122 +130,82 @@
             const cmd = input.value.trim();
             const cmdLower = cmd.toLowerCase();
 
-            // 1. Handle Location Update: /[city]
-            if (cmd.startsWith('/')) {
+            if (cmd === '/help') {
+                document.getElementById('help-modal').style.display = 'flex';
+            } 
+            else if (cmd.startsWith('/hn ')) {
+                const sub = cmd.split(' ')[1].toLowerCase();
+                fetchHN(sub);
+                input.placeholder = `SYNCED: HN_${sub.toUpperCase()}`;
+            }
+            else if (cmd.startsWith('/')) {
                 const query = cmd.substring(1);
-                if (query.length > 0) {
-                    try {
-                        const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
-                        const geoData = await geoRes.json();
-                        
-                        if (geoData.results && geoData.results[0]) {
-                            const loc = geoData.results[0];
-                            const locObj = { lat: loc.latitude, lon: loc.longitude, name: loc.name };
-                            localStorage.setItem('apple_tactical_vFinal_loc', JSON.stringify(locObj));
-                            updateWeatherUI(loc.latitude, loc.longitude, loc.name);
-                            input.placeholder = `SYNCED: ${loc.name.toUpperCase()}`;
-                        } else {
-                            input.placeholder = "LOC_NOT_FOUND";
-                        }
-                    } catch (err) {
-                        input.placeholder = "GEO_SYNC_ERROR";
-                    }
+                const geoRes = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(query)}&count=1&language=en&format=json`);
+                const geoData = await geoRes.json();
+                if (geoData.results) {
+                    const loc = geoData.results[0];
+                    savedLoc = { lat: loc.latitude, lon: loc.longitude, name: loc.name };
+                    localStorage.setItem('apple_tactical_vFinal_loc', JSON.stringify(savedLoc));
+                    updateWeatherUI(loc.latitude, loc.longitude, loc.name);
                 }
             } 
-            // 2. Handle Filters
-            else if (cmdLower === 'hn') {
-                activeFilter = 'HN';
-                prompt.style.opacity = "1";
-                logContainer.innerHTML = ''; 
-            } else if (cmdLower === 'all' || cmd === '') {
-                activeFilter = null;
-                prompt.style.opacity = "0.4";
-            }
+            else if (cmdLower === 'hn') activeFilter = 'HN';
+            else if (cmdLower === 'all') { activeFilter = null; logContainer.innerHTML = ''; }
+
             input.value = '';
         }
     });
 
+    async function fetchHN(type = 'top') {
+        const res = await fetch(`https://hacker-news.firebaseio.com/v0/${type}stories.json`);
+        const ids = await res.json();
+        ids.slice(0, 50).forEach(async (id) => {
+            const item = await (await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)).json();
+            if (item && item.title) pushToQueue({ src: `HN_${type.toUpperCase()}`, txt: item.title, url: item.url || `https://news.ycombinator.com/item?id=${id}` });
+        });
+    }
+
     async function fetchIntel() {
-        try {
-            // Hacker News: Top 100 stories
-            const hnRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json');
-            const hnIds = await hnRes.json();
-            hnIds.slice(0, 100).forEach(async (id) => {
-                const item = await (await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)).json();
-                if (item && item.title) pushToQueue({ src: 'HN_TOP', txt: item.title, url: item.url || `https://news.ycombinator.com/item?id=${id}` });
-            });
-
-            // Hacker News: Best 50 stories
-            const hnBestRes = await fetch('https://hacker-news.firebaseio.com/v0/beststories.json');
-            const hnBestIds = await hnBestRes.json();
-            hnBestIds.slice(0, 50).forEach(async (id) => {
-                const item = await (await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)).json();
-                if (item && item.title) pushToQueue({ src: 'HN_BEST', txt: item.title, url: item.url || `https://news.ycombinator.com/item?id=${id}` });
-            });
-
-            // GitHub Trending Proxy
-            const ghRes = await fetch('https://gtrend.yapie.me/repositories?since=daily');
-            const ghData = await ghRes.json();
-            ghData.slice(0, 20).forEach(repo => {
-                pushToQueue({ src: 'GITHUB_TREND', txt: `${repo.author}/${repo.name}: ${repo.description || 'No description'}`, url: repo.url });
-            });
-
-            // Dev.to Top
-            const devRes = await fetch('https://dev.to/api/articles?top=1&per_page=30');
-            const devData = await devRes.json();
-            devData.forEach(p => pushToQueue({ src: 'DEV_COMMUNITY', txt: p.title, url: p.url }));
-
-        } catch(e) { console.warn("Sync Lag"); }
+        fetchHN('top');
+        // GitHub Trending Proxy
+        const ghRes = await fetch('https://gtrend.yapie.me/repositories?since=daily');
+        const ghData = await ghRes.json();
+        ghData.slice(0, 15).forEach(repo => pushToQueue({ src: 'GITHUB', txt: `${repo.author}/${repo.name}`, url: repo.url }));
+        // Dev.to
+        const devRes = await fetch('https://dev.to/api/articles?top=1&per_page=15');
+        const devData = await devRes.json();
+        devData.forEach(p => pushToQueue({ src: 'DEV_TO', txt: p.title, url: p.url }));
     }
 
     function pushToQueue(item) {
         intelQueue.push(item);
         intelArchive.push(item);
-        if (intelArchive.length > 500) intelArchive.shift(); // Expanded capacity
+        if (intelArchive.length > 300) intelArchive.shift();
     }
 
     function processQueue() {
-        // Stop if hovered
-        if (isIntelHovered) {
-            setTimeout(processQueue, 1000);
-            return;
-        }
-        
-        if (intelQueue.length === 0 && intelArchive.length > 0) {
-            intelQueue = [...intelArchive].sort(() => Math.random() - 0.5);
-        }
-
+        if (isIntelHovered) { setTimeout(processQueue, 1000); return; }
+        if (intelQueue.length === 0 && intelArchive.length > 0) intelQueue = [...intelArchive].sort(() => Math.random() - 0.5);
         if (intelQueue.length > 0) {
             let item = intelQueue.shift();
-            
-            if (activeFilter === 'HN' && !item.src.includes('HN')) {
-                setTimeout(processQueue, 10);
-                return;
-            }
-
+            if (activeFilter === 'HN' && !item.src.includes('HN')) { setTimeout(processQueue, 10); return; }
             const line = document.createElement('div');
             line.className = 'term-line';
-            line.onmouseenter = () => { isIntelHovered = true; }; // Hover start
-            line.onmouseleave = () => { isIntelHovered = false; }; // Hover end
-            
-            const ts = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', hour12:false});
-            line.innerHTML = `
-                <span class="term-ts">[${ts}]</span>
-                <span class="intel-string">LIVE_INTEL:</span>
-                <span class="source-tag">${item.src}</span>
-                <a href="${item.url}" target="_blank" class="term-link">${item.txt}</a>
-            `;
+            line.onmouseenter = () => isIntelHovered = true;
+            line.onmouseleave = () => isIntelHovered = false;
+            line.innerHTML = `<span class="term-ts">[${new Date().toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'})}]</span> <span class="intel-string">INTEL:</span> <span class="source-tag">${item.src}</span> <a href="${item.url}" target="_blank" class="term-link">${item.txt}</a>`;
             logContainer.prepend(line);
-            if (logContainer.childNodes.length > 45) logContainer.lastChild.remove();
+            if (logContainer.childNodes.length > 40) logContainer.lastChild.remove();
         }
-        setTimeout(processQueue, Math.random() * (1800 - 800) + 800);
+        setTimeout(processQueue, Math.random() * 1000 + 800);
     }
 
     async function updateWeatherUI(lat, lon, city) {
         document.getElementById('location-label').innerText = city.toUpperCase();
-        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,weathercode&timezone=auto`);
+        const unit = useMetric ? "" : "&temperature_unit=fahrenheit";
+        const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true&daily=temperature_2m_max,weathercode&timezone=auto${unit}`);
         const data = await res.json();
-        document.getElementById('temp-label').innerText = `${Math.round(data.current_weather.temperature)}°`;
+        document.getElementById('temp-label').innerText = `${Math.round(data.current_weather.temperature)}°${useMetric ? 'C' : 'F'}`;
         const aRes = await fetch(`https://api.open-meteo.com/v1/elevation?latitude=${lat}&longitude=${lon}`);
         const aData = await aRes.json();
         document.getElementById('alt-val').innerText = `${Math.round(aData.elevation[0] * 3.28084).toLocaleString()} FT`;
@@ -250,17 +219,14 @@
         for (let i = 0; i < 7; i++) {
             if (i !== 0) tape.innerHTML += '<div class="tape-divider"></div>';
             const d = new Date(); d.setDate(d.getDate() + i);
-            tape.innerHTML += `<div class="tape-day"><span class="t-label">${days[d.getDay()]}</span><span class="t-num">${d.getDate()}</span><i data-lucide="${daily.weathercode[i] <= 3 ? 'sun' : 'cloud-rain'}" class="t-icon" size="14"></i><span class="t-temp">${Math.round(daily.temperature_2m_max[i])}°</span></div>`;
+            tape.innerHTML += `<div class="tape-day"><span class="t-label">${days[d.getDay()]}</span><span class="t-num">${d.getDate()}</span><i data-lucide="${daily.weathercode[i] <= 3 ? 'sun' : 'cloud-rain'}" size="14"></i><span class="t-temp">${Math.round(daily.temperature_2m_max[i])}°</span></div>`;
         }
         lucide.createIcons();
     }
 
     function updateTick() {
         const diff = Math.floor((Date.now() - startTime) / 1000);
-        const hrs = Math.floor(diff / 3600).toString().padStart(2, '0');
-        const mins = Math.floor((diff % 3600) / 60).toString().padStart(2, '0');
-        const secs = (diff % 60).toString().padStart(2, '0');
-        document.getElementById('uptime-val').innerText = `${hrs}:${mins}:${secs}`;
+        document.getElementById('uptime-val').innerText = `${Math.floor(diff/3600).toString().padStart(2,'0')}:${Math.floor((diff%3600)/60).toString().padStart(2,'0')}:${(diff%60).toString().padStart(2,'0')}`;
         const now = new Date();
         document.getElementById('date-label').innerText = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }).toUpperCase();
         document.getElementById('day-label').innerText = now.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase();
@@ -269,15 +235,12 @@
     window.onload = async () => {
         if (savedLoc) updateWeatherUI(savedLoc.lat, savedLoc.lon, savedLoc.name);
         else {
-            try {
-                const res = await fetch('https://ipapi.co/json/');
-                const data = await res.json();
-                updateWeatherUI(data.latitude, data.longitude, data.city);
-            } catch(e) { console.warn("Location fetch failed"); }
+            const res = await fetch('https://ipapi.co/json/');
+            const data = await res.json();
+            updateWeatherUI(data.latitude, data.longitude, data.city);
         }
         fetchIntel();
         processQueue();
-        setInterval(fetchIntel, 600000); // 10 min refresh
         setInterval(updateTick, 1000);
         setInterval(() => document.getElementById('ping-val').innerText = `${Math.floor(Math.random()*5+12)}MS`, 5000);
     };
