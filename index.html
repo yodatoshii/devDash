@@ -26,18 +26,42 @@
         .t-num { font-size: 10px; opacity: 0.5; font-family: 'Fira Code'; }
         .t-temp { font-size: 11px; font-weight: 800; margin-top: 4px; }
 
-        header { position: absolute; top: 40px; left: 40px; right: 40px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 100; }
+        header { position: absolute; top: 40px; left: 40px; right: 40px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 100; pointer-events: none; }
+        .corner-left, .corner-right { pointer-events: auto; }
         .corner-left { border-left: 3px solid var(--ultra-orange); padding-left: 20px; }
         .location { font-size: 12px; font-weight: 900; color: var(--ultra-orange); letter-spacing: 3px; text-transform: uppercase; }
-        #temp-label { font-size: 68px; font-weight: 200; line-height: 1; letter-spacing: -2px; cursor: pointer; transition: opacity 0.2s; }
+        #temp-label { font-size: 68px; font-weight: 200; line-height: 1; letter-spacing: -2px; cursor: pointer; transition: opacity 0.2s; position: relative; }
         #temp-label:hover { opacity: 0.7; }
+        #temp-label::after { content: 'TOGGLE'; position: absolute; bottom: -15px; left: 0; font-size: 8px; font-weight: 900; letter-spacing: 1px; opacity: 0; transition: opacity 0.3s; color: var(--ultra-orange); }
+        #temp-label:hover::after { opacity: 1; }
+
         .corner-right { text-align: right; border-right: 3px solid var(--ultra-orange); padding-right: 20px; }
         .label-small { font-size: 10px; font-weight: 900; color: var(--ultra-orange); text-transform: uppercase; letter-spacing: 3px; }
         .data-large { font-size: 52px; font-weight: 200; line-height: 1; margin-top: 4px; letter-spacing: -2px; }
 
-        /* --- TERMINAL --- */
-        #terminal-wrap { position: absolute; top: 55%; left: 50%; transform: translate(-50%, -50%); width: 900px; height: 70vh; display: flex; flex-direction: column; z-index: 50; }
-        #terminal-log { flex-grow: 1; padding: 10px 20px; font-family: 'Fira Code', monospace; font-size: 14px; line-height: 1.8; overflow: hidden; display: flex; flex-direction: column-reverse; mask-image: linear-gradient(to top, black 80%, transparent 100%); }
+        /* --- TERMINAL (TALLER VERSION) --- */
+        #terminal-wrap { 
+            position: absolute; 
+            top: 130px; /* Sits right below the header elements */
+            left: 50%; 
+            transform: translateX(-50%); 
+            width: 900px; 
+            height: 75vh; /* Increased height */
+            display: flex; 
+            flex-direction: column; 
+            z-index: 50; 
+        }
+        #terminal-log { 
+            flex-grow: 1; 
+            padding: 10px 20px; 
+            font-family: 'Fira Code', monospace; 
+            font-size: 14px; 
+            line-height: 1.8; 
+            overflow: hidden; 
+            display: flex; 
+            flex-direction: column-reverse; 
+            mask-image: linear-gradient(to top, black 90%, transparent 100%); 
+        }
         .term-line { margin-bottom: 2px; padding: 4px 0; display: flex; align-items: flex-start; gap: 8px; animation: fadeIn 0.3s ease-out forwards; transition: background 0.2s; }
         .term-line:hover { background: rgba(255, 94, 0, 0.05); }
         .term-ts { color: #444; font-size: 12px; white-space: nowrap; }
@@ -86,12 +110,12 @@
 <div id="help-modal">
     <div class="modal-content">
         <h2 style="color:var(--ultra-orange); letter-spacing:3px; margin-bottom:25px; font-weight:900; font-size:14px;">SYSTEM_UTILITIES</h2>
-        <div class="cmd-row"><span class="cmd-name">/[CITY]</span><span>Update global coordinates</span></div>
-        <div class="cmd-row"><span class="cmd-name">/HN [TOP|BEST|NEW]</span><span>Switch Hacker News feeds</span></div>
-        <div class="cmd-row"><span class="cmd-name">/HELP</span><span>Display this archive</span></div>
-        <div class="cmd-row"><span class="cmd-name">HN</span><span>Filter terminal for HN only</span></div>
+        <div class="cmd-row"><span class="cmd-name">/[CITY]</span><span>Update coordinates</span></div>
+        <div class="cmd-row"><span class="cmd-name">/HN [TOP|BEST|NEW]</span><span>Switch HN feed</span></div>
+        <div class="cmd-row"><span class="cmd-name">/HELP</span><span>Display archive</span></div>
+        <div class="cmd-row"><span class="cmd-name">HN</span><span>Filter for HN only</span></div>
         <div class="cmd-row"><span class="cmd-name">ALL</span><span>Clear all filters</span></div>
-        <div class="cmd-row"><span class="cmd-name">CLICK_TEMP</span><span>Toggle between °F / °C</span></div>
+        <div class="cmd-row"><span class="cmd-name">CLICK_TEMP</span><span>Toggle & Save °F / °C</span></div>
         <button onclick="document.getElementById('help-modal').style.display='none'" style="margin-top:20px; background:var(--ultra-orange); border:none; color:#000; padding:12px; border-radius:12px; font-weight:900; cursor:pointer; width:100%; font-size:11px; letter-spacing:1px;">ACKNOWLEDGE</button>
     </div>
 </div>
@@ -108,20 +132,20 @@
 
 <script>
     let savedLoc = JSON.parse(localStorage.getItem('apple_tactical_vFinal_loc')) || null;
-    let useMetric = false;
+    let useMetric = localStorage.getItem('apple_tactical_metric') === 'true';
+
     let intelQueue = [];
     let intelArchive = [];
     let startTime = Date.now();
     let isIntelHovered = false;
     let activeFilter = null;
 
-    // --- UNIT TOGGLE ---
     document.getElementById('temp-label').onclick = () => {
         useMetric = !useMetric;
+        localStorage.setItem('apple_tactical_metric', useMetric);
         if (savedLoc) updateWeatherUI(savedLoc.lat, savedLoc.lon, savedLoc.name);
     };
 
-    // --- CLI HANDLER ---
     const input = document.getElementById('term-input');
     const logContainer = document.getElementById('terminal-log');
 
@@ -135,7 +159,6 @@
             } 
             else if (cmdLower.startsWith('/hn ')) {
                 const sub = cmd.split(' ')[1].toLowerCase();
-                // When user requests a specific feed, purge the old queue to show new data immediately
                 intelQueue = []; 
                 fetchHN(sub);
                 input.placeholder = `FEED_SYNCED: HN_${sub.toUpperCase()}`;
@@ -162,15 +185,10 @@
         try {
             const res = await fetch(`https://hacker-news.firebaseio.com/v0/${type}stories.json`);
             const ids = await res.json();
-            // Fetching 50 items for the selected category
             ids.slice(0, 50).forEach(async (id) => {
                 const item = await (await fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`)).json();
                 if (item && item.title) {
-                    const payload = { 
-                        src: `HN_${type.toUpperCase()}`, 
-                        txt: item.title, 
-                        url: item.url || `https://news.ycombinator.com/item?id=${id}` 
-                    };
+                    const payload = { src: `HN_${type.toUpperCase()}`, txt: item.title, url: item.url || `https://news.ycombinator.com/item?id=${id}` };
                     intelQueue.push(payload);
                     intelArchive.push(payload);
                     if (intelArchive.length > 500) intelArchive.shift();
@@ -180,12 +198,10 @@
     }
 
     async function fetchIntel() {
-        // Initial mixed feed
         fetchHN('top');
         const ghRes = await fetch('https://gtrend.yapie.me/repositories?since=daily');
         const ghData = await ghRes.json();
         ghData.slice(0, 15).forEach(repo => pushToQueue({ src: 'GITHUB', txt: `${repo.author}/${repo.name}`, url: repo.url }));
-        
         const devRes = await fetch('https://dev.to/api/articles?top=1&per_page=15');
         const devData = await devRes.json();
         devData.forEach(p => pushToQueue({ src: 'DEV_TO', txt: p.title, url: p.url }));
@@ -199,31 +215,17 @@
 
     function processQueue() {
         if (isIntelHovered) { setTimeout(processQueue, 1000); return; }
-        
-        // Loop archive if queue is empty
-        if (intelQueue.length === 0 && intelArchive.length > 0) {
-            intelQueue = [...intelArchive].sort(() => Math.random() - 0.5);
-        }
-
+        if (intelQueue.length === 0 && intelArchive.length > 0) intelQueue = [...intelArchive].sort(() => Math.random() - 0.5);
         if (intelQueue.length > 0) {
             let item = intelQueue.shift();
-            
-            // Handle filtering logic
-            if (activeFilter === 'HN' && !item.src.includes('HN')) { 
-                setTimeout(processQueue, 10); 
-                return; 
-            }
-
+            if (activeFilter === 'HN' && !item.src.includes('HN')) { setTimeout(processQueue, 10); return; }
             const line = document.createElement('div');
             line.className = 'term-line';
             line.onmouseenter = () => isIntelHovered = true;
             line.onmouseleave = () => isIntelHovered = false;
-            
-            const ts = new Date().toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'});
-            line.innerHTML = `<span class="term-ts">[${ts}]</span> <span class="intel-string">INTEL:</span> <span class="source-tag">${item.src}</span> <a href="${item.url}" target="_blank" class="term-link">${item.txt}</a>`;
+            line.innerHTML = `<span class="term-ts">[${new Date().toLocaleTimeString([], {hour12:false, hour:'2-digit', minute:'2-digit'})}]</span> <span class="intel-string">INTEL:</span> <span class="source-tag">${item.src}</span> <a href="${item.url}" target="_blank" class="term-link">${item.txt}</a>`;
             logContainer.prepend(line);
-            
-            if (logContainer.childNodes.length > 40) logContainer.lastChild.remove();
+            if (logContainer.childNodes.length > 50) logContainer.lastChild.remove(); // Increased visibility
         }
         setTimeout(processQueue, Math.random() * 1000 + 800);
     }
